@@ -74,6 +74,52 @@ io.on('connection', (socket) => {
     io.emit('fieldCard', fieldCard);
     io.emit('handInfo', playerHands);
     console.log('デッキ生成・シャッフル:', deck.length, '枚');
+    // --- ここで最初のカードを自動でめくる ---
+    setTimeout(() => {
+      if (deck.length > 0) {
+        fieldCard = deck.shift()!;
+        console.log('最初のカード:', fieldCard); // デバッグ用
+        io.emit('deckInfo', { remaining: deck.length });
+        io.emit('fieldCard', fieldCard);
+        // 「1」「3」「9」判定
+        if ([1, 3, 9].includes(fieldCard.value)) {
+          io.emit('touchPhase', true);
+          touchActions = [];
+          if (touchTimeout) clearTimeout(touchTimeout);
+          touchTimeout = setTimeout(() => {
+            io.emit('touchPhase', false);
+            if (touchActions.length > 0) {
+              const last = touchActions[touchActions.length - 1];
+              if (touchActions.length === 1) {
+                playerHands[last.id] = (playerHands[last.id] || 0) + (fieldCard ? 1 : 0);
+                io.emit('handInfo', playerHands);
+                io.emit('touchResult', { loserId: last.id, field: [...(fieldCard ? [fieldCard] : [])] });
+              } else {
+                playerHands[last.id] = (playerHands[last.id] || 0) + (fieldCard ? 1 : 0);
+                io.emit('handInfo', playerHands);
+                io.emit('touchResult', { loserId: last.id, field: [...(fieldCard ? [fieldCard] : [])] });
+              }
+            } else {
+              io.emit('touchResult', null);
+            }
+          }, 2000);
+        } else {
+          io.emit('touchPhase', false);
+          touchActions = [];
+          if (touchTimeout) clearTimeout(touchTimeout);
+          touchTimeout = setTimeout(() => {
+            if (touchActions.length > 0) {
+              const first = touchActions[0];
+              playerHands[first.id] = (playerHands[first.id] || 0) + (fieldCard ? 1 : 0);
+              io.emit('handInfo', playerHands);
+              io.emit('touchResult', { loserId: first.id, field: [...(fieldCard ? [fieldCard] : [])], mistake: true });
+            } else {
+              io.emit('touchResult', null);
+            }
+          }, 2000);
+        }
+      }
+    }, 500); // 0.5秒後に最初のカードをめくる
   });
 
   // カードをめくるリクエスト

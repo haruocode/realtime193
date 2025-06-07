@@ -230,3 +230,12 @@ function setupUI() {
 }
 
 setupUI();
+
+// Socket.IOイベントハンドラ登録
+socket.on('playerInfo', handlePlayerInfo);
+socket.on('playerList', handlePlayerList);
+socket.on('deckInfo', handleDeckInfo);
+socket.on('handInfo', handleHandInfo);
+socket.on('fieldCard', handleFieldCard);
+socket.on('touchResult', handleTouchResult);
+// ...他のイベントがあればここに追加...

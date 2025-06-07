@@ -7,7 +7,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "start": "node dist/index.js",
-    "dev": "npm run build && npm run start"
+    "dev": "ts-node-dev src/index.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -17,6 +17,8 @@
   "devDependencies": {
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
+    "nodemon": "^3.1.10",
+    "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5"
   }
 }
