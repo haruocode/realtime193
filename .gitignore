@@ -3,5 +3,5 @@
 /dist
 /build
 /.env
-/server/dist/
-/client/js/
+./server/dist
+./client/js

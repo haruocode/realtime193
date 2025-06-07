@@ -1,6 +1,5 @@
 "use strict";
 const socket = io('http://localhost:3000');
-// --- グローバル状態 ---
 let myPlayerId = '';
 let myPlayerName = '';
 let deckRemaining = 0;
@@ -34,7 +33,7 @@ function renderCard(elem, card, onClick) {
         const valueStr = valueMap[card.value] || card.value.toString();
         elem.textContent = `${suitMap[card.suit] || card.suit} ${valueStr}`;
         if (card.suit === 'H' || card.suit === 'D') {
-            elem.classList.add('red');
+            elem.classList.add('red'); // ハート・ダイヤは赤色
         }
         elem.onclick = onClick || null;
     }
@@ -47,7 +46,6 @@ function renderCard(elem, card, onClick) {
     elem.style.margin = '16px auto';
     elem.style.width = '180px';
 }
-// --- 通知表示関数 ---
 function showNotification(message, type = 'success') {
     const area = getOrCreateElem('notification-area', 'div');
     const note = document.createElement('div');
@@ -60,7 +58,6 @@ function showNotification(message, type = 'success') {
         setTimeout(() => area.removeChild(note), 400);
     }, 2600);
 }
-// --- Socketイベントハンドラ ---
 function handlePlayerInfo(info) {
     myPlayerId = info.id;
     myPlayerName = info.name;
@@ -102,6 +99,10 @@ function handleHandInfo(hands) {
 let autoDrawActive = false;
 let autoDrawTimeout = null;
 let lastFieldCard = null;
+/**
+ * 場のカード情報を受信して表示
+ * @param card 場のカード情報（nullの場合はカードなし）
+ */
 function handleFieldCard(card) {
     console.log('受信: fieldCard', card);
     lastFieldCard = card;
@@ -115,11 +116,11 @@ function handleFieldCard(card) {
         if (deckRemaining > 0) {
             autoDrawTimeout = setTimeout(() => {
                 startAutoDrawSequence();
-            }, 5000);
+            }, 2000);
         }
     }
     else {
-        // 1/3/9のときはtouchResultで再開
+        // 「1」「3」「9」のときはtouchResultで再開
         autoDrawActive = false;
     }
 }
@@ -174,7 +175,7 @@ function handleTouchResult(result) {
                 autoDrawActive = false;
                 startAutoDrawSequence();
             }
-        }, 5000);
+        }, 3000);
     }
 }
 // --- カウントダウン表示＆自動カードめくり ---
@@ -205,9 +206,12 @@ function startAutoDrawSequence() {
         idx++;
         if (idx === texts.length) {
             clearInterval(interval);
-            countElem.textContent = '';
-            // デッキが残っていれば次のカードを引く
-            socket.emit('drawCard');
+            // 1秒間「さん！」を表示してからカードをめくる
+            setTimeout(() => {
+                // デッキが残っていれば次のカードを引く
+                socket.emit('drawCard');
+                countElem.textContent = '';
+            }, 1000);
         }
     }, 1000);
 }
@@ -227,3 +231,11 @@ function setupUI() {
     allHandsElem.textContent = '';
 }
 setupUI();
+// Socket.IOイベントハンドラ登録
+socket.on('playerInfo', handlePlayerInfo);
+socket.on('playerList', handlePlayerList);
+socket.on('deckInfo', handleDeckInfo);
+socket.on('handInfo', handleHandInfo);
+socket.on('fieldCard', handleFieldCard);
+socket.on('touchResult', handleTouchResult);
+// ...他のイベントがあればここに追加...

@@ -67,6 +67,10 @@ io.on('connection', (socket) => {
 
   // ゲーム開始時にデッキ生成・シャッフル
   socket.on('startGame', () => {
+    if (players.length < 2) {
+      socket.emit('messageFromServer', '2人以上でゲームを開始できます。');
+      return;
+    }
     deck = shuffle(createDeck());
     fieldCard = null;
     for (const id in playerHands) playerHands[id] = 0;
@@ -89,16 +93,29 @@ io.on('connection', (socket) => {
           touchTimeout = setTimeout(() => {
             io.emit('touchPhase', false);
             if (touchActions.length > 0) {
-              const last = touchActions[touchActions.length - 1];
-              if (touchActions.length === 1) {
-                playerHands[last.id] = (playerHands[last.id] || 0) + (fieldCard ? 1 : 0);
-                io.emit('handInfo', playerHands);
-                io.emit('touchResult', { loserId: last.id, field: [...(fieldCard ? [fieldCard] : [])] });
+              if (players.length === 2 && touchActions.length === 1) {
+                // 2人の場合: 最初に手をついた人以外に手札を追加
+                const first = touchActions[0];
+                const other = players.find(p => p.id !== first.id);
+                if (other) {
+                  playerHands[other.id] = (playerHands[other.id] || 0) + (fieldCard ? 1 : 0);
+                  io.emit('handInfo', playerHands);
+                  io.emit('touchResult', { loserId: other.id, field: [...(fieldCard ? [fieldCard] : [])] });
+                }
               } else {
+                // 3人以上 or 2人で両方手をついた場合: 最後に手をついた人に手札を追加
+                const last = touchActions[touchActions.length - 1];
                 playerHands[last.id] = (playerHands[last.id] || 0) + (fieldCard ? 1 : 0);
                 io.emit('handInfo', playerHands);
                 io.emit('touchResult', { loserId: last.id, field: [...(fieldCard ? [fieldCard] : [])] });
               }
+            } else if (players.length === 2) {
+              // 2人で誰も手をつかなかった場合: 両方に1枚ずつ追加
+              players.forEach(p => {
+                playerHands[p.id] = (playerHands[p.id] || 0) + (fieldCard ? 1 : 0);
+              });
+              io.emit('handInfo', playerHands);
+              io.emit('touchResult', { loserId: null, field: [...(fieldCard ? [fieldCard] : [])] });
             } else {
               io.emit('touchResult', null);
             }
