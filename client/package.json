@@ -1,0 +1,17 @@
+{
+  "name": "realtime193-client",
+  "version": "1.0.0",
+  "main": "js/app.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@types/socket.io-client": "^1.4.36",
+    "typescript": "^5.4.5"
+  }
+}
